@@ -2314,6 +2314,7 @@ class TestBuildRequest(object):
         ('fedora:latest', False),
         ('koji/image-build', True),
         ('koji/image-build:spam.conf', True),
+        ('scratch', False),
     ])
     def test_prod_is_custom_base_image(self, tmpdir, base_image, is_custom):
         build_request = BuildRequest(INPUTS_PATH)
@@ -2326,6 +2327,25 @@ class TestBuildRequest(object):
         build_json = build_request.render()  # noqa
 
         assert build_request.is_custom_base_image() == is_custom
+
+    @pytest.mark.parametrize(('base_image', 'is_from_scratch'), [
+        ('fedora', False),
+        ('fedora:latest', False),
+        ('koji/image-build', False),
+        ('koji/image-build:spam.conf', False),
+        ('scratch', True),
+    ])
+    def test_prod_is_from_scratch_image(self, base_image, is_from_scratch):
+        build_request = BuildRequest(INPUTS_PATH)
+        # Safe to call prior to build image being set
+        assert build_request.is_from_scratch_image() is False
+
+        kwargs = get_sample_prod_params()
+        kwargs['base_image'] = base_image
+        build_request.set_params(**kwargs)
+        build_json = build_request.render()  # noqa
+
+        assert build_request.is_from_scratch_image() == is_from_scratch
 
     def test_prod_missing_kojihub__custom_base_image(self, tmpdir):
         build_request = BuildRequest(INPUTS_PATH)
